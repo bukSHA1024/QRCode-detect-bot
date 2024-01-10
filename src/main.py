@@ -8,13 +8,14 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 
-from tempfile import NamedTemporaryFile
 from pyzbar.pyzbar import decode
 from PIL import Image
+from io import BytesIO
 
 TOKEN = getenv("BOT_TOKEN")
 
 dp = Dispatcher()
+bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 
 
 @dp.message(CommandStart())
@@ -44,14 +45,13 @@ async def detect_qr_code(message: types.Message) -> None:
     """
     if message is not None and message.photo is not None:
         maxPhotoSize = max(message.photo, key=lambda photoSize: photoSize.file_size)
-        with NamedTemporaryFile() as tmp:
-            maxPhotoSize.download(tmp)
-            qrcode_data = decode(Image.open(tmp))
-            print("Found", [d.data for d in qrcode_data])
+        photo_info = await bot.get_file(maxPhotoSize.file_id)
+        photo_bytes = await bot.download_file(photo_info.file_path)
+        qrcode_data = decode(Image.open(photo_bytes))
+        print("Found", [d.data for d in qrcode_data])
 
 
 async def main() -> None:
-    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
     await dp.start_polling(bot)
 
 
