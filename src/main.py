@@ -47,8 +47,12 @@ async def detect_qr_code(message: types.Message) -> None:
         maxPhotoSize = max(message.photo, key=lambda photoSize: photoSize.file_size)
         photo_info = await bot.get_file(maxPhotoSize.file_id)
         photo_bytes = await bot.download_file(photo_info.file_path)
-        qrcode_data = decode(Image.open(photo_bytes))
-        print("Found", [d.data for d in qrcode_data])
+        qrcodes = decode(Image.open(photo_bytes))
+        for qrcode in qrcodes:
+            await message.answer("I found QR code with following content: " + qrcode.data.decode("utf-8"))
+
+        if len(qrcodes) == 0:
+            await message.answer("I didn't find anything on this picture")
 
 
 async def main() -> None:
